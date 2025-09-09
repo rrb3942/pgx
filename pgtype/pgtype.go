@@ -242,8 +242,8 @@ func NewMap() *Map {
 			TryWrapBuiltinTypeEncodePlan,
 			TryWrapFindUnderlyingTypeEncodePlan,
 			TryWrapStructEncodePlan,
-			TryWrapSliceEncodePlan,
 			TryWrapMultiDimSliceEncodePlan,
+			TryWrapSliceEncodePlan,
 			TryWrapArrayEncodePlan,
 		},
 
@@ -252,8 +252,8 @@ func NewMap() *Map {
 			TryWrapBuiltinTypeScanPlan,
 			TryFindUnderlyingTypeScanPlan,
 			TryWrapStructScanPlan,
-			TryWrapPtrSliceScanPlan,
 			TryWrapPtrMultiDimSliceScanPlan,
+			TryWrapPtrSliceScanPlan,
 			TryWrapPtrArrayScanPlan,
 		},
 	}

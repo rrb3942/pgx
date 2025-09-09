@@ -30,8 +30,8 @@ func initDefaultMap() {
 			TryWrapBuiltinTypeEncodePlan,
 			TryWrapFindUnderlyingTypeEncodePlan,
 			TryWrapStructEncodePlan,
-			TryWrapSliceEncodePlan,
 			TryWrapMultiDimSliceEncodePlan,
+			TryWrapSliceEncodePlan,
 			TryWrapArrayEncodePlan,
 		},
 
@@ -40,8 +40,8 @@ func initDefaultMap() {
 			TryWrapBuiltinTypeScanPlan,
 			TryFindUnderlyingTypeScanPlan,
 			TryWrapStructScanPlan,
-			TryWrapPtrSliceScanPlan,
 			TryWrapPtrMultiDimSliceScanPlan,
+			TryWrapPtrSliceScanPlan,
 			TryWrapPtrArrayScanPlan,
 		},
 	}
