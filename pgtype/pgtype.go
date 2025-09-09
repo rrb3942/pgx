@@ -1874,7 +1874,17 @@ func TryWrapMultiDimSliceEncodePlan(value any) (plan WrappedEncodePlanNextSetter
 	if sliceValue.Kind() == reflect.Slice {
 		valueElemType := sliceValue.Type().Elem()
 
-		if valueElemType.Kind() == reflect.Slice {
+		isMultiDim := valueElemType.Kind() == reflect.Slice
+		if !isMultiDim && valueElemType.Kind() == reflect.Interface {
+			if sliceValue.Len() > 0 {
+				firstElem := sliceValue.Index(0)
+				if !firstElem.IsNil() && firstElem.Elem().Kind() == reflect.Slice {
+					isMultiDim = true
+				}
+			}
+		}
+
+		if isMultiDim {
 			if !isRagged(sliceValue) {
 				w := anyMultiDimSliceArray{
 					slice: reflect.ValueOf(value),
