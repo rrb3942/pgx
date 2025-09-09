@@ -801,11 +801,13 @@ func (a *anyMultiDimSliceArray) Dimensions() []ArrayDimension {
 		a.dims = append(a.dims, ArrayDimension{Length: int32(s.Len()), LowerBound: 1})
 		if s.Len() > 0 {
 			s = s.Index(0)
+			if s.Kind() == reflect.Interface && !s.IsNil() {
+				s = s.Elem()
+			}
 		} else {
 			break
 		}
-		if s.Type().Kind() == reflect.Slice {
-		} else {
+		if s.Kind() != reflect.Slice {
 			break
 		}
 	}
@@ -821,12 +823,19 @@ func (a *anyMultiDimSliceArray) Index(i int) any {
 	indexes := make([]int, len(a.dims))
 	for j := len(a.dims) - 1; j >= 0; j-- {
 		dimLen := int(a.dims[j].Length)
-		indexes[j] = i % dimLen
-		i = i / dimLen
+		if dimLen > 0 {
+			indexes[j] = i % dimLen
+			i = i / dimLen
+		} else {
+			indexes[j] = 0
+		}
 	}
 
 	v := a.slice
 	for _, si := range indexes {
+		if v.Kind() == reflect.Interface && !v.IsNil() {
+			v = v.Elem()
+		}
 		v = v.Index(si)
 	}
 
