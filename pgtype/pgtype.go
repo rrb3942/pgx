@@ -1817,6 +1817,21 @@ func TryWrapSliceEncodePlan(value any) (plan WrappedEncodePlanNextSetter, nextVa
 	}
 
 	if valueType := reflect.TypeOf(value); valueType != nil && valueType.Kind() == reflect.Slice {
+		elemType := valueType.Elem()
+		if elemType.Kind() == reflect.Slice {
+			return nil, nil, false // Defer to TryWrapMultiDimSliceEncodePlan
+		}
+
+		if elemType.Kind() == reflect.Interface {
+			sliceValue := reflect.ValueOf(value)
+			if sliceValue.Len() > 0 {
+				firstElem := sliceValue.Index(0)
+				if !firstElem.IsNil() && firstElem.Elem().Kind() == reflect.Slice {
+					return nil, nil, false // Defer to TryWrapMultiDimSliceEncodePlan
+				}
+			}
+		}
+
 		w := anySliceArrayReflect{
 			slice: reflect.ValueOf(value),
 		}
