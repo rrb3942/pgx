@@ -1012,7 +1012,7 @@ func TryWrapPtrMultiDimSliceScanPlan(target any) (plan WrappedScanPlanNextSetter
 
 	if targetElemValue.Kind() == reflect.Slice {
 		elemElemKind := targetElemValue.Type().Elem().Kind()
-		if elemElemKind == reflect.Slice {
+		if elemElemKind == reflect.Slice || elemElemKind == reflect.Interface {
 			if !isRagged(targetElemValue) {
 				return &wrapPtrMultiDimSliceScanPlan{}, &anyMultiDimSliceArray{slice: targetValue.Elem()}, true
 			}
