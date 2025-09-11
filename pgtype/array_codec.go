@@ -376,9 +376,82 @@ func (c *ArrayCodec) DecodeValue(m *Map, oid uint32, format int16, src []byte) (
 		return nil, nil
 	}
 
-	var slice []any
-	err := m.PlanScan(oid, format, &slice).Scan(src, &slice)
-	return slice, err
+	if format == BinaryFormatCode {
+		var arrayHeader arrayHeader
+		rp, err := arrayHeader.DecodeBinary(m, src)
+		if err != nil {
+			return nil, err
+		}
+
+		elementCount := cardinality(arrayHeader.Dimensions)
+		if elementCount == 0 {
+			return []any{}, nil
+		}
+
+		elementCodec := m.oidToType[arrayHeader.ElementOID].Codec
+
+		elements := make([]any, elementCount)
+		for i := 0; i < elementCount; i++ {
+			elemLen := int(int32(binary.BigEndian.Uint32(src[rp:])))
+			rp += 4
+			var elemSrc []byte
+			if elemLen >= 0 {
+				elemSrc = src[rp : rp+elemLen]
+				rp += elemLen
+			}
+
+			elements[i], err = elementCodec.DecodeValue(m, arrayHeader.ElementOID, BinaryFormatCode, elemSrc)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		return buildArray(elements, arrayHeader.Dimensions), nil
+	}
+
+	uta, err := parseUntypedTextArray(string(src))
+	if err != nil {
+		return nil, err
+	}
+	if uta == nil {
+		return nil, nil
+	}
+
+	elementScanPlan := m.PlanScan(c.ElementType.OID, TextFormatCode, (*any)(nil))
+
+	elements := make([]any, len(uta.Elements))
+	for i, s := range uta.Elements {
+		var elemSrc []byte
+		if s != "NULL" || uta.Quoted[i] {
+			elemSrc = []byte(s)
+		}
+		err = elementScanPlan.Scan(elemSrc, &elements[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return buildArray(elements, uta.Dimensions), nil
+}
+
+func buildArray(elements []any, dimensions []ArrayDimension) any {
+	if len(dimensions) <= 1 {
+		return elements
+	}
+
+	length := int(dimensions[0].Length)
+	if length == 0 {
+		return []any{}
+	}
+
+	slice := make([]any, length)
+	elementsPerItem := len(elements) / length
+
+	for i := 0; i < length; i++ {
+		slice[i] = buildArray(elements[i*elementsPerItem:(i+1)*elementsPerItem], dimensions[1:])
+	}
+
+	return slice
 }
 
 func isRagged(slice reflect.Value) bool {
