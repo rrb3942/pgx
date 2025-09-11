@@ -3,6 +3,7 @@ package pgx_test
 import (
 	"bytes"
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"net"
 	"os"
@@ -1133,4 +1134,38 @@ func TestScanIntoByteSlice(t *testing.T) {
 			require.Equal(t, tt.output, buf)
 		})
 	}
+}
+
+type stringArrayValuer string
+
+func (v stringArrayValuer) Value() (driver.Value, error) {
+	if v == "" {
+		return nil, nil
+	}
+	return string(v), nil
+}
+
+type byteArrayValuer []byte
+
+func (v byteArrayValuer) Value() (driver.Value, error) {
+	if v == nil {
+		return nil, nil
+	}
+	return []byte(v), nil
+}
+
+func TestDriverValuerArray(t *testing.T) {
+	t.Parallel()
+
+	conn := mustConnectString(t, os.Getenv("PGX_TEST_DATABASE"))
+	defer closeConn(t, conn)
+
+	var result [][]string
+	err := conn.QueryRow(context.Background(), "select $1::text[]", stringArrayValuer("{{a,b},{c,d}}")).Scan(&result)
+	require.NoError(t, err)
+	require.Equal(t, [][]string{{"a", "b"}, {"c", "d"}}, result)
+
+	err = conn.QueryRow(context.Background(), "select $1::text[]", byteArrayValuer("{{e,f},{g,h}}")).Scan(&result)
+	require.NoError(t, err)
+	require.Equal(t, [][]string{{"e", "f"}, {"g", "h"}}, result)
 }
