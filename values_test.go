@@ -717,6 +717,16 @@ func TestArrayDecoding(t *testing.T) {
 					require.Equal(t, expected, actual)
 				},
 			},
+			{
+				"select $1::text[]",
+				[]any{[]any{"a", "b"}, []any{"c", "d"}},
+				&[]any{},
+				func(t testing.TB, query, scan any) {
+					expected := []any{[]any{"a", "b"}, []any{"c", "d"}}
+					actual := *(scan.(*[]any))
+					require.Equal(t, expected, actual)
+				},
+			},
 		}
 
 		for i, tt := range tests {
